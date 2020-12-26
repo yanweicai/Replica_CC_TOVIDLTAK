@@ -10,8 +10,14 @@ The control CC mice from the three studies underwent very similar experiments of
 Body weight and liver related phenotype are measured. Microarray expression is measured in the TOV and TAK data.
 
 # Files
-
-```R
-phenotype.R
-```
-
+* phenotype.R
+ * Analysis of variance components of phenotypes (Table 1)
+ * QTL mapping analysis of phenotypes (Including Figure 2)
+ * Analysis of within-strain differences (Figure 6)
+* ExpAnalysis.R
+ * Variance components analysis in expression (Figure 3)
+ * Analysis and plotting for Figure 4,5
+* Cluster_ExpMapping_cluster.r
+ * eQTL mapping of expression data (Figure 5)
+* Cluster_ExpggLASSO.r
+ * Lasso, gLasso, ridge, elastic-net analysis of expression data (Figure 4D)
