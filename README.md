@@ -11,13 +11,13 @@ Body weight and liver related phenotype are measured. Microarray expression is m
 
 # Files
 * phenotype.R
- * Analysis of variance components of phenotypes (Table 1)
- * QTL mapping analysis of phenotypes (Including Figure 2)
- * Analysis of within-strain differences (Figure 6)
+  * Analysis of variance components of phenotypes (Table 1)
+  * QTL mapping analysis of phenotypes (Including Figure 2)
+  * Analysis of within-strain differences (Figure 6)
 * ExpAnalysis.R
- * Variance components analysis in expression (Figure 3)
- * Analysis and plotting for Figure 4,5
+  * Variance components analysis in expression (Figure 3)
+  * Analysis and plotting for Figure 4,5
 * Cluster_ExpMapping_cluster.r
- * eQTL mapping of expression data (Figure 5)
+  * eQTL mapping of expression data (Figure 5)
 * Cluster_ExpggLASSO.r
- * Lasso, gLasso, ridge, elastic-net analysis of expression data (Figure 4D)
+  * Lasso, gLasso, ridge, elastic-net analysis of expression data (Figure 4D)
