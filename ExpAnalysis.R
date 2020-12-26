@@ -15,6 +15,7 @@ rm(Expdf.full)
 info <- Expdf[,c(1:7)]
 info$CC <- as.factor(info$CC)
 
+
 info$Study <- as.character(info$Study)
 info$Study2 <- info$Study
 info$Study[which(info$Study=='TAK')] <- 0.5
