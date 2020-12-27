@@ -10,6 +10,7 @@ The control CC mice from the three studies underwent very similar experiments of
 Body weight and liver related phenotype are measured. Microarray expression is measured in the TOV and TAK data.
 
 ## Input
+Input data is at '../data/' by default
 * Phenotype data (as described in paper)
 * Expression data and annotation (as described in paper)
 * CC haplotype information (downloaded from http://csbio.unc.edu/CCstatus/)
