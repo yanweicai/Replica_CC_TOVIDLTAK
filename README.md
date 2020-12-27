@@ -9,6 +9,11 @@ Three studies were originally designed to invest drug induced liver injury of th
 The control CC mice from the three studies underwent very similar experiments of vehicle-only dosing. The uniformity of experiments, together with genetically identical inbred subjects, makes these studies been considered independent replicating experiments on identical subjects.
 Body weight and liver related phenotype are measured. Microarray expression is measured in the TOV and TAK data.
 
+## Input
+* Phenotype data (as described in paper)
+* Expression data and annotation (as described in paper)
+* CC haplotype information (downloaded from http://csbio.unc.edu/CCstatus/)
+
 ## Files
 * phenotype.R
   * Analysis of variance components of phenotypes (Table 1)
