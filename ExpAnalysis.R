@@ -88,8 +88,19 @@ boxplot(tmp)
 write.table(outdf,file="../result/Res2.1.expstrainlevel.txt",quote=TRUE,sep="\t",row.names = FALSE,col.names = TRUE)
 
 
-outdf <- read.table(file="Result/Res1.2.1.strainlevel.txt",sep="\t",header=TRUE)
+outdf <- read.table(file="../result/Res1.2.1.strainlevel.txt",sep="\t",header=TRUE)
 fitmp<- glm(pcc ~ h2.1 + h2.1.p  + StrainStudy + h2.1:StrainStudy,family = gaussian,data=outdf)
+
+# --> plots of Variance components analysis in expression data
+library(reshape2)
+outdf2 <- outdf[,c('h2.mega','StudyEff','StrainStudy','Residual')]
+colnames(outdf2) <- c("Strain","Study","Strain-by-Study","Residual")
+outdf2 <- melt(outdf2,value.name='Variance')
+ggplot(outdf2,aes(variable,Variance)) + 
+  geom_violin(scale = 'width') + 
+  stat_summary(geom = 'crossbar', fun.data = median_hilow, width = 0.1, fun.args = list(conf.int = 0.5)) +
+  ggtitle("y ~ 1 + Study + (1 + Study|CC)")
+ggsave(filename = "modelvarsum/boxplot4.png", width = 7, height = 5)
 
 plot(outdf$h2.mega,outdf.strain$StrainStudy,xlab='Single Study Heritability (TAK)',ylab='Two Study Strain-by-study effect',
      cex=0.5,pch=19,xlim=c(0,1),ylim=c(0,1))
@@ -103,34 +114,7 @@ plot(outdf$h2.1, (outdf$h2.mega+outdf$StrainStudy),xlim=c(0,1),ylim=c(0,1),
      xlab='Single Study Heritability (TAK)',ylab='Two Study: Strain + Strain-by-study effect',cex=0.5,pch=19)
 points(c(-1,2),c(-1,2),lty=2,type='l',col='blue')
 
-### plot 1.1.1 Variance explained by each parts, histgram of SxS effect
-library(reshape2)
-outdf2 <- outdf[,c('h2.mega','StudyEff','StrainStudy','Residual')]
-colnames(outdf2) <- c("Strain","Study","Strain-by-Study","Residual")
-outdf2 <- melt(outdf2,value.name='Variance')
-ggplot(outdf2,aes(variable,Variance)) + 
-  geom_violin(scale = 'width') + 
-  stat_summary(geom = 'crossbar', fun.data = median_hilow, width = 0.1, fun.args = list(conf.int = 0.5)) +
-  ggtitle("y ~ 1 + Study + (1 + Study|CC)")
-ggsave(filename = "modelvarsum/boxplot4.png", width = 7, height = 5)
 
-## figure 2.1.1 h2 h2 plot
-plot(outdf$h2.1,outdf$h2.2,xlab='h2 TAK Study',ylab='h2 TOV Study',pch=19,cex=0.4)
-#ix <- outdf$logPSxS>15
-#points(outdf$h2.1[ix],outdf$h2.2[ix],pch=19,cex=0.5,col='blue') 
-
-## figure 2.1.2 BLUP cor hitgram
-plot(outdf$h2.1,outdf$pcc,xlab='h2 TAK Study',ylab='Correlation of Strain Effect (BLUP pcc)',pch=19,cex=0.4)
-
-# BLUPcor correlated with 
-plot(outdf$StrainStudy,outdf$pcc,xlab='Strain-by-Study effect (Variance percentage)',ylab='Correlation of Strain Effect (BLUP pcc)',pch=19,cex=0.4)
-
-
-## figure 2.1.2 
-plot(predict(fitmp,data.frame(h2.1=0.1,h2.1.p=0.01,StrainStudy=seq(0.01,0.1,0.01))),
-     xlab='Gene-by-Study Effect (Percentage of variance)',ylab='Reproducibility of strain effect (BLUPpcc)',
-     xlim=c(0,75),ylim=c(0,1),type='l')
-for (ix in 2:9){points(predict(fitmp,data.frame(h2.1=0.1*ix,h2.1.p=0.01,StrainStudy=seq(0.01,0.1*ix,0.01))),type='l',lty=ix)}
 
 
 
