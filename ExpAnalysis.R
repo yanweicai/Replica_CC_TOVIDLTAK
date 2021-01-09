@@ -4,6 +4,8 @@ library(dplyr)
 library(ggplot2)
 library(evir)
 library(miqtl)
+
+setwd("~/Dropbox/ValdarLab/IDSScross_git/src/")
 Expdf.full <- read.table(file="../data/CCexpsum.full.adj.txt",sep="\t",header=TRUE)
 
 CClist <- sort(unique(intersect(Expdf.full$CC[Expdf.full$Study=='TAK'],Expdf.full$CC[Expdf.full$Study=='TOV'])))
@@ -14,7 +16,7 @@ rm(Expdf.full)
 
 info <- Expdf[,c(1:7)]
 info$CC <- as.factor(info$CC)
-
+info$CCbyStudy <- paste0(info$CC,'_',info$Study)
 
 info$Study <- as.character(info$Study)
 info$Study2 <- info$Study
@@ -51,21 +53,18 @@ for (pb in probelist){
   h2.3 <- fit3.v$vcov[1]/sum(fit3.v$vcov)
   h2.3.p <- rand(fit3)$'Pr(>Chisq)'[2]
   
-  fit4 <- lmer( y ~ 1 + Study + (1+Study|CC), data=info,REML=FALSE)
+  fit4 <- lmer( y ~ 1 + Study + (1|CC) + (1|CCbyStudy), data=info,REML=FALSE)
   myanova<-anova(fit4,fit3,refit=FALSE)
   logPSxS <- -log10(myanova$`Pr(>Chisq)`[2])
   
-  ## 
   corf1f2df <- cbind(ranef(fit1)$CC,ranef(fit2)$CC)
   corf1f2df <- corf1f2df[complete.cases(corf1f2df),]
   thiscor <- cor(corf1f2df[[1]],corf1f2df[[2]])
-  
-  fit5 <- fit4
-  varout5 <- as.data.frame(VarCorr(fit5))
-  v.CC <- varout5$vcov[1]
-  v.CCS <- varout5$vcov[2]
-  v.CCScor <- varout5$vcov[3]
-  v.R <- varout5$vcov[4]
+
+    varout5 <- as.data.frame(VarCorr(fit4))
+  v.CC <- varout5[varout5$grp=='CC','vcov']
+  v.CCS <- varout5[varout5$grp=='CCbyStudy','vcov']
+  v.R <- varout5[varout5$grp=='Residual','vcov']
 
   v.Study <- var(predict(lm(y~Study,data=info)))
 
@@ -76,12 +75,11 @@ for (pb in probelist){
                        h2.2=h2.2,h2.2.p= -log10(h2.2.p),
                        h2.3=h2.3,h2.3.p= -log10(h2.3.p),
                        logPSxS=logPSxS,pcc=thiscor,
-                       v.CC=v.CC,v.CCS=v.CCS,v.CCScor=v.CCScor,v.R=v.R,v.Study=v.Study,var.y=var.y)
+                       v.CC=v.CC,v.CCS=v.CCS,v.R=v.R,v.Study=v.Study,var.y=var.y)
   outdf <- rbind(outdf,thisdf)
 }
 dim(outdf)
-outdf$CCtotal <- outdf$v.CC + outdf$v.CCS + 2*outdf$v.CCScor
-tmp <- outdf[,c('v.CC','v.CCS','v.CCScor','v.Study','v.R')]
+tmp <- outdf[,c('v.CC','v.CCS','v.Study','v.R')]
 tmp$CCtotal <- tmp$v.CC + tmp$v.CCS + 2*tmp$v.CCScor
 boxplot(tmp)
 
@@ -182,6 +180,7 @@ for (i in 1:1000){
   thiso <- sample(1:dim(TOV.cor)[1])
   thisF <- sqrt(sum(  (TAK.cor-TOV.cor[thiso,thiso])^2 ))  
   outF <- c(outF,thisF)
+  save(outF,file="~/Downloads/outFtmp.Rdata")
 }
 
 ################ Supplimentory Code ########################

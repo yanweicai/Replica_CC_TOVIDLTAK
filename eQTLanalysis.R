@@ -64,6 +64,13 @@ ggplotdf <- ggplotdf[c(which(ggplotdf$variable=='insR'),which(ggplotdf$variable=
 ggplot(ggplotdf,aes(x=quan,y=value,fill=variable,order=variable))+
   geom_violin(width=0.8,draw_quantiles = c(0.25, 0.5, 0.75))
 
+# compare group-Lasso, Lasso, Ridge, and Elastic net (0.5)
+outdf.lassos <- read.table(file="Result/ggLASSO_RES_outsample_LRE.txt",sep="\t")
+colnames(outdf.lassos) <- c('pb','o.gLss','o.Lss','o.Rdg','o.Els')
+outdf.strain <- merge(outdf.strain,outdf.lassos,by='pb')
+
+ggplotdf <- outdf.strain[which(outdf.strain$quan %in% c('0-5%')),c('o.gLss','o.Lss','o.Rdg','o.Els')]
+boxplot(ggplotdf)
 
 ### Section 1. eQTL mapping ###
 anno4 <- read.table(file="TOV_anno4.txt",sep="\t",header=TRUE)
@@ -367,4 +374,4 @@ dev.off()
 
 Megapm <- read.table(file="~/Dropbox (ValdarLab)/YanweiData/IDSScross/Megascan.rint.pmatrix.txt")
 
-
+# Section 4. 

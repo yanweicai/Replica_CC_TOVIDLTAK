@@ -6,9 +6,10 @@ library(miqtl)
 library(ggplot2)
 library(tidyverse)
 
+setwd("~/Dropbox/ValdarLab/IDSScross_git/src/")
 # read in data table
 info <- read.table(file="../data/info_3study.txt",header=TRUE,sep = "\t")
-
+info$CCbyStudy <- paste0(info$CC,'_',info$Study)
 options(contrasts = rep("contr.sum", 2)) # Set contrasts -- see below
 
 ### Section 1. Variance components of phenotype models.
@@ -20,7 +21,7 @@ for (ph in phone_list){
   info$y <- as.numeric(info[,ph])
 
   # Adjust for Batch effects 
-  fit0 <- lmer( y ~ 1 + Study + (1|CCline) + (0+Study|CCline) + (1|Dosing.Date), data=info,REML=FALSE)
+  fit0 <- lmer( y ~ 1 + Study + (1|CCline) + (1|CCbyStudy) + (1|Dosing.Date), data=info,REML=FALSE)
   batef <- ranef(fit0)$Dosing.Date;batch2num <- batef[[1]]; names(batch2num) <- rownames(batef)
   info$y <- info$y - batch2num[info$Dosing.Date]
   
@@ -42,24 +43,24 @@ for (ph in phone_list){
   
 
   # phenotype analysis for three studies
-  fit5 <- lmer( y ~ 1 + Study + (1+Study|CCline), data=info,REML=FALSE)
-  fit7 <- lmer( y ~ 1 +  (1|CCline) + (1+Study|CCline), data=info,REML=FALSE)
+  fit5 <- lmer( y ~ 1 + Study + (1|CCline) + (1|CCbyStudy), data=info,REML=FALSE)
+  fit7 <- lmer( y ~ 1 +  (1|CCline) + (1|CCbyStudy), data=info,REML=FALSE)
     
   h2.SxS.p <- ranova(fit5)$"Pr(>Chisq)"[3]
   h2.C.p <- ranova(fit5)$"Pr(>Chisq)"[2]
   h2.S.p <- anova(fit5,fit7)$"Pr(>Chisq)"[2]
     
   varout5 <- as.data.frame(VarCorr(fit5))
-  v.CC <- varout5$vcov[which(varout5$grp=="CCline" & varout5$var1=="(Intercept)" & is.na(varout5$var2))]
+  v.CC <- varout5$vcov[which(varout5$grp=="CCline")]
   v.R <- varout5$vcov[which(varout5$grp=="Residual")]
-  v.CCS <- sum(varout5$vcov[which(varout5$grp=='CCline.1')][c(1,2,3,4,4,5,5,6,6)]) # var(X)+var(Y)+2Cov(X+Y)
+  v.CCS <- varout5$vcov[which(varout5$grp=='CCbyStudy')] # var(X)+var(Y)+2Cov(X+Y)
 
-  v.Study <- var(predict(lm(y~Study,data=info)))
-  v.sum <- v.CC + v.R + v.CCS + v.Study
-  
-  h2.mega.CS <- round(v.CCS/v.sum,3)
-  h2.mega.CC <- round(v.CC/v.sum,3)
-  h2.mega.Study <- round(v.Study/v.sum,3)
+  v.All <- var(info$y,use='na.or.complete')
+  v.Study <- v.All-v.CC-v.R-v.CCS
+
+  h2.mega.CS <- round(v.CCS/v.All,3)
+  h2.mega.CC <- round(v.CC/v.All,3)
+  h2.mega.Study <- round(v.Study/v.All,3)
 
   p2p <- function(plist){
     plisto <- rep('',length(plist))
@@ -74,7 +75,9 @@ for (ph in phone_list){
   thisdf <- data.frame(ph=ph,h2.tov=paste0(h2.tov,p2p(h2.tov.p)),h2.tak=paste0(h2.tak,p2p(h2.tak.p)),h2.gld=paste0(h2.gld,p2p(h2.gld.p)),
                        CC.123=paste0(h2.mega.CC,p2p(h2.C.p)),
                        Study.123=paste0(h2.mega.Study,p2p(h2.S.p)),
-                       SxS.123=paste0(h2.mega.CS,p2p(h2.SxS.p)))
+                       SxS.123=paste0(h2.mega.CS,p2p(h2.SxS.p)),
+                       h2.tov.p=h2.tov.p,h2.tak.p=h2.tak.p,h2.gld.p=h2.gld.p,
+                       h2.C.p=h2.C.p,h2.S.p=h2.S.p,h2.SxS.p=h2.SxS.p)
   
   #thisdf2 <- data.frame(ph=ph,h2.tov=h2.tov,h2.tov.p=h2.tov.p,h2.tak=h2.tak,h2.tak.p=h2.tak.p,h2.gld=h2.gld,h2.gld.p=h2.gld.p,
   #                     Study.123=mega123[1],Study.123.p=mega123[2],CC.123=mega123[3],CC.123.p=mega123[4],SxS.123=mega123[5],SxS.123.p=mega123[6])
@@ -105,7 +108,7 @@ BWsumsub$x <- 3
 BWsum <- rbind(BWsum,BWsumsub)
 
 # plot for the within-strain differences figure
-pdf(file="Result/BWsd.pdf",width=4.5,height=4.5)
+#pdf(file="Result/BWsd.pdf",width=4.5,height=4.5)
 p<- ggplot(BWsum,aes(x=x,y=sd,group=CCline))
 for (xi in 0:3){p <- p + geom_vline(xintercept = xi, color = "gray", size=1)}
 p <- p + geom_point(aes(color=CCline),show.legend = F) + 
@@ -116,7 +119,7 @@ p <- p + geom_point(aes(color=CCline),show.legend = F) +
   
 p+theme(text=element_text(size=15),panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
       panel.background = element_blank(), axis.line = element_blank())
-dev.off()
+#dev.off()
 
 ### Section 3. QTL mapping for ALT/AST phenotype
 for (ph in c('ALT','AST')){
@@ -180,14 +183,19 @@ for (ph in c('ALT','AST')){
                             data=ph.df, formula= ph ~ 1+Study,weights = myweights,pheno.id="pheno.id",use.multi.impute=MI,num.imp=20,print.locus.fit=FALSE)
   saveRDS(Scan_mega,file=paste0("~/Dropbox/ValdarLab/IDSScross/Result/PhenoAuto/",ph,"scan.RDS"))
 
+  #HPeak <- ceiling(max( -log10(Scan_Tov$p.value),-log10(Scan_Tak$p.value), -log10(Scan_Gld$p.value),-log10(Scan_mega$p.value)))
   pdf(paste0("~/Dropbox/ValdarLab/IDSScross/Result/Pheno/",ph,".mapping.mm10.pdf"),width=10,height=14)
   par(mfrow=c(4,1))
-  genome.plotter.whole(scan.list=list(MI=Scan_Tov),main="TOV",y.max.manual=HPeak)
-  genome.plotter.whole(scan.list=list(MI=Scan_Tak),main="TAK",y.max.manual=HPeak)
-  genome.plotter.whole(scan.list=list(MI=Scan_Gld),main="GLD",y.max.manual=HPeak)
-  genome.plotter.whole(scan.list=list(MI=Scan_mega),main="Mega",y.max.manual=HPeak)
-  #  dev.off()
+  genome.plotter.whole(scan.list=list(MI=Scan_Tov),main="TOV")
+  genome.plotter.whole(scan.list=list(MI=Scan_Tak),main="TAK")
+  genome.plotter.whole(scan.list=list(MI=Scan_Gld),main="GLD")
+  genome.plotter.whole(scan.list=list(MI=Scan_mega),main="Mega")
+  dev.off()
 }
+
+
+# threshold for ALT: 9.265661   (gev:-0.2303773  1.2742609  6.5247375)
+# threshold for AST: 6.516393   (gev:-0.01232742  0.77762467  4.24846875)
 
 pdf(paste0("~/Dropbox/ValdarLab/IDSScross/Result/Pheno/",ph,".mapping.mm10.pdf"),width=8.5,height=7)
 par(mfrow=c(2,1))
@@ -196,4 +204,9 @@ genome.plotter.whole(scan.list=list(TOV=Scan_Tov,TAK=Scan_Tak,IDL=Scan_Gld),main
 genome.plotter.whole(scan.list=list(Mega=Scan_mega),main="",y.max.manual=HPeak)
 dev.off()
 
+pdf(paste0("~/Dropbox/ValdarLab/IDSScross/Result/Pheno/ALTAST.mapping.mm10.pdf"),width=8.5,height=7)
+par(mfrow=c(2,1))
+genome.plotter.whole(scan.list=list(Mega=ALT.scan),main="",hard.thresholds=9.265661)
+genome.plotter.whole(scan.list=list(Mega=AST.scan),main="",hard.thresholds=6.516393)
+dev.off()
 
